@@ -1,7 +1,9 @@
-###Tracker-AC 
+# Tracker-AS
+Shows which Autonomous System the packet passes through when it is delivered to this address
 
-written in Python 3.7
 Example: tni.mil.id
 
 # Screen
 ![Screenshot](Screenshot_1.png)
+
+>Необходим интерпретатор Python версии не ниже, чем 3.6
