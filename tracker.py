@@ -24,8 +24,8 @@ def ip_api_request(address: str) -> dict:
 
 
 def request_ip_data(address: str) -> dict:
-    ip_apis = (ipinfo_request,
-               ip_api_request)
+    ip_apis = (ip_api_request,
+               ipinfo_request)
     for api in ip_apis:
         try:
             data = api(address)
@@ -38,7 +38,7 @@ def request_ip_data(address: str) -> dict:
     return data
 
 
-def trace_win(address: str) -> tuple:
+def trace_win(address: str, max_hops=30) -> tuple:
     p = Popen(('tracert', "-d", address), stdout=PIPE)
     ip = list()
     while True:
@@ -50,31 +50,25 @@ def trace_win(address: str) -> tuple:
     return tuple(ip)
 
 
-def trace_linux(address: str) -> tuple:
-    result = str(check_output("sudo traceroute -I {}".format(address), shell=True, stderr=DEVNULL)).split('\\n')
-    ip = list()
-    ip_pattern = re.compile('[0-9]+(?:\.[0-9]+){3}')
-    for line in result[1:-1]:
-        re_result = re.findall(ip_pattern, line)
-        ip.append(re_result[0] if re_result else '')
-    return tuple(ip)
-
-
-def trace(address: str) -> tuple:
-    system = platform.system()
-    if system == 'Windows':
-        return trace_win(address)
-    elif system == 'Linux':
-        return trace_linux(address)
-    else:
-        return ()
+def trace_linux(address: str, max_hops=30) -> tuple:
+    result = str(check_output("sudo traceroute -I -m {} {}".format(max_hops, address), shell=True, stderr=DEVNULL))
+    ip_pattern = re.compile('\([0-9]+(?:\.[0-9]+){3}\)')
+    ip_addresses = list()
+    for line in result.split('\\n'):
+        ip = re.findall(ip_pattern, line)
+        ip = ip[0][1:-1] if ip else ''
+        ip_addresses.append(ip)
+    return tuple(ip_addresses[1:-1])
 
 
 def main():
     address = sys.argv[1]
-    route = trace(address)
-
-    if not route:
+    system = platform.system()
+    if system == 'Windows':
+        route = trace_win(address)
+    elif system == 'Linux':
+        route = trace_linux(address)
+    else:
         print("Unknown OS")
         return
 
