@@ -1,9 +1,15 @@
 # Tracker-AS
-Shows which Autonomous System the packet passes through when it is delivered to this address
+This app shows which Autonomous System the packet passes through when it is delivered to this address
 
-Example: tni.mil.id
+### Screenshots
+![Screenshot](screenshots/image_1.png)
 
-# Screen
-![Screenshot](Screenshot_1.png)
+### Run
+```
+make i=mail.ru
+```
 
->Необходим интерпретатор Python версии не ниже, чем 3.6
+### Requirements
+- python3
+- requests
+- PrettyTable

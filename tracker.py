@@ -7,28 +7,21 @@ from subprocess import Popen, PIPE, check_output, DEVNULL
 from prettytable import PrettyTable
 
 
-def ipinfo_request(address: str) -> dict:
-    url = 'https://ipinfo.io/{}/json'.format(address)
+POLLED_SERVICES = ['https://ipinfo.io/{}/json', 'http://ip-api.com/json/{}']
+
+
+def service_request(service: str, address: str) -> dict:
+    url = service.format(address)
     data = requests.get(url)
     data = data.json()
     keys = ("org", "city", "country")
     return {key: data[key] if key in data.keys() else '?' for key in keys}
 
 
-def ip_api_request(address: str) -> dict:
-    url = 'http://ip-api.com/json/{}'.format(address)
-    data = requests.get(url)
-    data = data.json()
-    keys = ("org", "city", "country")
-    return {key: data[key] if (key in data.keys() and data[key]) else '?' for key in keys}
-
-
 def request_ip_data(address: str) -> dict:
-    ip_apis = (ip_api_request,
-               ipinfo_request)
-    for api in ip_apis:
+    for service in POLLED_SERVICES:
         try:
-            data = api(address)
+            data = service_request(service, address)
         except requests.RequestException:
             continue
         else:
@@ -38,16 +31,16 @@ def request_ip_data(address: str) -> dict:
     return data
 
 
-def trace_win(address: str, max_hops=30) -> tuple:
-    p = Popen(('tracert', "-d", address), stdout=PIPE)
-    ip = list()
+def trace_win(address: str) -> tuple:
+    popen = Popen(('tracert', "-d", address), stdout=PIPE)
+    ip_addresses = list()
     while True:
-        line = p.stdout.readline().decode('cp1256')
+        line = popen.stdout.readline().decode('cp1256')
         if 'ms' in line:
-            ip.append(line.split(' ')[-2])
+            ip_addresses.append(line.split(' ')[-2])
         if not line:
             break
-    return tuple(ip)
+    return tuple(ip_addresses)
 
 
 def trace_linux(address: str, max_hops=30) -> tuple:
@@ -66,7 +59,7 @@ def main():
     system = platform.system()
     if system == 'Windows':
         route = trace_win(address)
-    elif system == 'Linux':
+    elif system in ['Linux', 'Darwin']:
         route = trace_linux(address)
     else:
         print("Unknown OS")
